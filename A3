@@ -1,0 +1,259 @@
+#include <locale.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct
+{
+    char nome[30];
+    int ano;
+    float fatura;
+} Cliente;
+
+void pausar()
+{
+    printf("Pressione ENTER para continuar! ");
+    fflush(stdin);
+    getchar();
+    fflush(stdin);
+}
+
+int menu();
+void inserir(Cliente *ponto, int quant);
+int remover(Cliente *ponto, int quant);
+void atualizar(Cliente *ponto, int quant);
+void zerar(Cliente *ponto, int quant);
+void print(Cliente *ponto, int quant);
+void list_melhor(Cliente *ponto, int quant);
+int buscar(Cliente *ponto, int quant);
+
+int main(void)
+{
+    setlocale(LC_ALL, "portuguese");
+    int op, quant=0;
+    Cliente *ponto = malloc(10*sizeof(Cliente)); //Reserva 10 espaços na memória.
+    if(ponto==NULL){
+        printf("[ERRO] Memória Indisponível! Volte mais tarde.\n");
+        exit(1);
+    }
+    do{
+        op = menu();
+        switch(op)
+        {
+        case 1:
+            inserir(ponto+quant, quant);
+            quant++;
+            if(quant%10==0){
+                ponto = realloc(ponto, (quant+10)*(sizeof(Cliente))); //Reajusta mais 10 espaços na memória.
+                if(ponto==NULL){
+                    printf("[ERRO] Memória Indisponível!");
+                    exit(1);
+                }
+            }
+            break;
+        case 2:
+            if(quant>0){
+                quant = remover(ponto, quant);
+                if((quant+1)%10==0)
+                {
+                    ponto = realloc(ponto, (quant+1)*(sizeof(Cliente))); // Reajusta menos dez espaços na memória.
+                    if(ponto==NULL){
+                        printf("[ERRO] Memória Indisponível!");
+                        exit(1);
+                    }
+                }
+            } else
+                printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+            pausar();
+            break;
+        case 3:
+            if(quant>0)
+                atualizar(ponto, quant);
+            else {
+                printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+                pausar();
+            }
+            break;
+        case 4:
+            if(quant>0)
+                zerar(ponto, quant);
+            else {
+                printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+                pausar();
+            }
+            break;
+        case 5:
+            print(ponto, quant);
+            break;
+        case 6:
+            if(quant>0)
+                list_melhor(ponto, quant);
+            else {
+                printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+            }
+            pausar();
+            break;
+        case 7:
+            if(quant>0){
+                system("cls");
+                printf(" ------ CLIENTE ------\n\n");
+                op = buscar(ponto, quant);
+                if(op==-1)
+                    printf("\nCliente inexistente!\n\n");
+            } else
+                printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+            pausar();
+            break;
+        case 8:
+            printf("\nO programa será encerrado. Confirmar? [1]SIM / [0]NÃO ");
+            scanf("%d", &op);
+            if(op){
+                printf("\nAté logo!\n");
+                return 0;
+            }
+            printf("\nRetornando ao programa!\n\n");
+            pausar();
+            break;
+        }
+        op = 0;
+    } while(!op);
+}
+
+int menu()
+{
+    int op;
+    system("cls");
+    printf("  ------ Sistema de Cadastro - Clientes ------\n\n1 - Cadastrar Cliente\n2 - Remover Clientes\n"
+           "3 - Atualizar Compras Clientes\n4 - Zerar Todas as Compras\n5 - Listar Clientes\n"
+           "6 - Listar Melhor Cliente\n7 - Exibir Compras Clientes\n8 - Sair\n\nDigite a opção desejada: ");
+    scanf("%d", &op);
+    return op;
+}
+
+void inserir(Cliente *ponto, int quant)
+{
+    system("cls");
+    printf(" ------ Cadastrar Cliente %d ------\n\nDigite o nome do cliente: ", quant+1);
+    fflush(stdin);
+    fgets(ponto->nome,30,stdin);
+    strcpy(ponto->nome,strupr(ponto->nome));
+    printf("Digite o ano de nascimento[AAAA]: ");
+    scanf("%d", &ponto->ano);
+    ponto->fatura = 0;
+    printf("\nCliente Cadastrado!\n\n");
+    pausar();
+}
+
+int remover(Cliente *ponto, int quant)
+{
+    int dep, i, op;
+    system("cls");
+    printf(" ------ Remover Cliente ------\n\n");
+    dep = buscar(ponto, quant);
+    if(dep==-1){
+        printf("\nCliente inexistente.\n\n");
+        return quant;
+    }
+    printf("Deseja realmente remover o cliente? [1]SIM / [0]NÃO ");
+    scanf("%d", &op);
+    if(!dep && op && quant==1){
+        ponto = NULL;
+        free(ponto);
+        quant--;
+        printf("\nCliente excluído com sucesso!\n\nLista Vazia!\n\n");
+        return quant;
+    } if(op){
+        for(i=dep;i<quant-1;i++)
+            memcpy(ponto+i, ponto+i+1, sizeof(Cliente));
+            printf("\nCliente excluído com sucesso!\n\n");
+        return --quant;
+    }
+    printf("\nProcesso de exclusão cancelado!\n\n");
+    return quant;
+}
+
+void atualizar(Cliente *ponto, int quant)
+{
+    int dep;
+    float valor;
+    system("cls");
+    printf(" ------ Atualizar Valores Clientes ------\n\n");
+    dep = buscar(ponto, quant);
+    if(dep==-1)
+        printf("\nCliente inexistente.\n\n");
+    else {
+        printf("Digite o valor: ");
+        scanf("%f", &valor);
+        (ponto+dep)->fatura += valor;
+        system("cls");
+        printf(" ------ Atualizar Valores Clientes ------\n\n\n");
+        printf("\n ------ Cliente %d ------\n\n", dep+1);
+        printf("Nome: %sNasc: %d\nTotal: R$%.2f\n\n", (ponto+dep)->nome, (ponto+dep)->ano, (ponto+dep)->fatura);
+    }
+    pausar();
+}
+
+void zerar(Cliente *ponto, int quant)
+{
+    int i, op;
+    system("cls");
+    printf("\n[ATENÇÃO] Todos os clientes terão o fatura zerada!\n\nConfirmar? [1]SIM / [0]NÃO ");
+    scanf("%d", &op);
+    if(op){
+        for(i=0;i<quant;i++){
+            ponto->fatura = 0;
+            ponto++;
+        }
+        printf("\nTodas as faturas foram zeradas!\n\n");
+    } else
+        printf("\nOperação Cancelada!\n\n");
+    pausar();
+}
+
+void print(Cliente *ponto, int quant)
+{
+    int i;
+    if(quant>0){
+        system("cls");
+        for(i=0;i<quant;i++){
+            printf(" ------ Cliente %d ------\n\n", i+1);
+            printf("Nome: %sNasc: %d\nTotal: R$%.2f\n\n", (ponto+i)->nome, (ponto+i)->ano, (ponto+i)->fatura);
+        }
+    } else
+        printf("\n[ERRO] Não existem clientes cadastrados.\n\n");
+    pausar();
+}
+
+void list_melhor(Cliente *ponto, int quant)
+{
+    int i, dep=0;
+    Cliente *list_melhor = ponto;
+    for(i=0;i<quant;i++){
+        if((ponto+i)->fatura>list_melhor->fatura){
+            list_melhor = ponto+i;
+            dep = i;
+        }
+    }
+    system("cls");
+    printf(" ------ Listar Melhor Cliente ------\n\n ------ Cliente %d ------\n\n", dep+1);
+    printf("Nome: %sNasc: %d\nTotal: R$%.2f\n\n", list_melhor->nome, list_melhor->ano, list_melhor->fatura);
+}
+
+int buscar(Cliente *ponto, int quant)
+{
+    int i=0;
+    char name[30];
+    printf("Digite o nome do cliente: ");
+    fflush(stdin);
+    fgets(name,30,stdin);
+    while(i<quant){
+        if(!strcmp((ponto+i)->nome,strupr(name))){
+            printf("\n ------ Cliente %d ------\n\n", i+1);
+            printf("Nome: %sNasc: %d\nTotal: R$%.2f\n\n", (ponto+i)->nome, (ponto+i)->ano, (ponto+i)->fatura);
+            return i;
+        }
+        i++;
+        if(i==quant)
+            return -1;
+    }
+}
